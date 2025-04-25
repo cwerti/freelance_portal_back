@@ -1,0 +1,70 @@
+services:
+    api: &main
+        restart: "no"
+        build:
+            context: .
+
+        ports:
+            - ${PORT}:${PORT}
+
+        env_file:
+            - ./.env
+
+        entrypoint: [ "python", "run.py" ]
+
+        volumes:
+            - ${FILES_PATH_VOLUME}:/var/project/app/storage
+            - ./app:/var/project/app
+
+        environment:
+            - HOST=0.0.0.0
+            - FILE_DIRECTORY=/var/project/app/storage
+            # если вы используете свои postgres/redis/centrifugo то вам нужно закомментировать эти переменные
+            - DB_HOST=postgres
+            - DB_PORT=5432
+        networks:
+            - local_net
+
+    # run_migrations:
+    #     # запуск миграций, alembic.ini будет автоматически сгенерирован по переменным среды
+    #     # скрипт запуска: docker-compose -f docker-compose.local.yml run --rm run_migrations
+    #     restart: "unless-stopped"
+    #     <<: *main
+
+    #     entrypoint: [ "/bin/bash", "./scripts/run_migrations_from_container.sh" ]
+    #     working_dir: "/var/project"
+
+    #     volumes:
+    #         - ./migrations:/var/project/migrations
+    #         - ./scripts:/var/project/scripts
+
+
+    postgres:
+        restart: "on-failure"
+        image: postgres:15
+
+        env_file:
+            - ./.env
+
+        environment:
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_NAME}
+
+        ports:
+            - ${DB_PORT}:5432
+        
+
+        volumes:
+            - ${POSTGRES_DATA_VOLUME}:/var/lib/postgresql/data
+
+        networks:
+            - local_net
+
+
+
+
+
+networks:
+    local_net:
+
