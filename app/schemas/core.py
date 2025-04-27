@@ -150,3 +150,24 @@ class StatusResponse(pydantic.BaseModel):
     status: str = "ok"
     warning: Optional[str] = None
     warning_info: list[dict] = pydantic.Field(default_factory=list)
+
+
+# class UidMixin(Model):
+#     """Миксин со строковым (uuid) полем Id для объектов."""
+#
+#     id: str
+#
+#     class Config(Model.Config):  # noqa: D106
+#         orm_mode = True
+#
+#     @pydantic.validator("id")
+#     def ensure_uuid(cls, value: str) -> str:  # noqa: D102, N805
+#         err = ValueError("Некорректный идентификатор")
+#         try:
+#             validated = uuid.UUID(value)
+#             if validated.version != 4:  # noqa: PLR2004
+#                 raise err
+#         except ValueError as e:
+#             raise err from e
+#
+#         return value

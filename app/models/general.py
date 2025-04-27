@@ -3,28 +3,29 @@ import os
 import imghdr
 
 from sqlalchemy import (
-    Column, DateTime, Integer, String, Boolean, Text, ForeignKey, 
+    Column, DateTime, Integer, String, Boolean, Text, ForeignKey,
     Index, CheckConstraint, Numeric
 )
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
-from sqla_softdelete import SoftDeleteMixin
 
 from models.core import Base, TimestampMixin, fresh_timestamp
+
 
 def attachment_is_image_default(context: Any) -> bool:
     return is_image(context.get_current_parameters()["path"])
 
+
 def is_image(path: os.PathLike) -> bool:
     return imghdr.what(path) is not None
 
-class User(SoftDeleteMixin, TimestampMixin, Base):
+
+class User(TimestampMixin, Base):
     __tablename__ = "users"
     __table_args__ = (
-        Index("users_email_key", "email", "deleted_at", unique=True, 
-              postgresql_where=Column("deleted_at is null")),
-        CheckConstraint("email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'", 
-                       name="valid_email"),
+        Index("users_email_key", "email",  unique=True),
+        CheckConstraint("email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'",
+                        name="valid_email"),
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -33,29 +34,29 @@ class User(SoftDeleteMixin, TimestampMixin, Base):
     email = Column(String(256), nullable=False)
     last_name = Column(String(50), nullable=False)
     first_name = Column(String(50), nullable=False)
-    
+
     # Связи
     role = relationship("Role", back_populates="users", uselist=False)
     orders = relationship("Order", back_populates="author")
     chats_as_executor = relationship(
-        "Chat", 
+        "Chat",
         foreign_keys="Chat.executor_id",
         back_populates="executor"
     )
     chats_as_client = relationship(
-        "Chat", 
+        "Chat",
         foreign_keys="Chat.client_id",
         back_populates="client"
     )
     files = relationship("File", back_populates="author")
     messages = relationship("Message", back_populates="author")
     reviews_as_executor = relationship(
-        "Review", 
+        "Review",
         foreign_keys="Review.executor",
         back_populates="executor_user"
     )
     reviews_as_author = relationship(
-        "Review", 
+        "Review",
         foreign_keys="Review.author",
         back_populates="author_user"
     )
@@ -65,7 +66,8 @@ class User(SoftDeleteMixin, TimestampMixin, Base):
         assert '@' in email, "Invalid email address"
         return email
 
-class Role(SoftDeleteMixin, TimestampMixin, Base):
+
+class Role(TimestampMixin, Base):
     __tablename__ = "roles"
     __table_args__ = (
         CheckConstraint("name ~ '^[a-zA-Z0-9_ ]+$'", name="valid_role_name"),
@@ -78,27 +80,29 @@ class Role(SoftDeleteMixin, TimestampMixin, Base):
 
     users = relationship("User", back_populates="role")
     permissions = relationship(
-        "RolePermission", 
-        uselist=True, 
-        cascade="all, delete-orphan", 
+        "RolePermission",
+        uselist=True,
+        cascade="all, delete-orphan",
         back_populates="role"
     )
 
-class RolePermission(SoftDeleteMixin, TimestampMixin, Base):
+
+class RolePermission(TimestampMixin, Base):
     __tablename__ = "role_permissions"
     __table_args__ = (
         Index("idx_role_permission", "role_id", "permission", unique=True),
     )
 
-    id = Column(SoftDeleteMixin, Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     permission = Column(Text, nullable=False)
     created_at = Column(DateTime, default=fresh_timestamp())
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    
+
     role = relationship("Role", back_populates="permissions")
 
-class Order(SoftDeleteMixin, TimestampMixin, Base):
+
+class Order(TimestampMixin, Base):
     __tablename__ = "orders"
     __table_args__ = (
         CheckConstraint("start_price >= 0", name="positive_price"),
@@ -113,13 +117,14 @@ class Order(SoftDeleteMixin, TimestampMixin, Base):
     start_price = Column(Numeric(10, 2), nullable=True)
     image_list = Column(Text)
     delta_time = Column(DateTime, nullable=True)
-    
+
     # Связи
     author_user = relationship("User", back_populates="orders")
     preview_file = relationship("File", foreign_keys=[preview])
     chat = relationship("Chat", back_populates="order", uselist=False)
 
-class Chat(SoftDeleteMixin, TimestampMixin, Base):
+
+class Chat(TimestampMixin, Base):
     __repr_name__ = "Чаты"
     __tablename__ = "chats"
     __table_args__ = (
@@ -131,22 +136,23 @@ class Chat(SoftDeleteMixin, TimestampMixin, Base):
     executor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     client_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
-    
+
     # Связи
     executor = relationship(
-        "User", 
+        "User",
         foreign_keys=[executor_id],
         back_populates="chats_as_executor"
     )
     client = relationship(
-        "User", 
+        "User",
         foreign_keys=[client_id],
         back_populates="chats_as_client"
     )
     order = relationship("Order", back_populates="chat")
     messages = relationship("Message", back_populates="chat")
 
-class Message(SoftDeleteMixin, TimestampMixin, Base):
+
+class Message(TimestampMixin, Base):
     __repr_name__ = "Сообщения"
     __tablename__ = "messages"
     __table_args__ = (
@@ -158,13 +164,14 @@ class Message(SoftDeleteMixin, TimestampMixin, Base):
     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
     text = Column(Text, nullable=True)
     file_id = Column(Integer, ForeignKey("files.id"), nullable=True)
-    
+
     # Связи
     author = relationship("User", back_populates="messages")
     chat = relationship("Chat", back_populates="messages")
     file = relationship("File")
 
-class File(SoftDeleteMixin, TimestampMixin, Base):
+
+class File(TimestampMixin, Base):
     __repr_name__ = "Файлы"
     __tablename__ = "files"
     __table_args__ = (
@@ -181,14 +188,15 @@ class File(SoftDeleteMixin, TimestampMixin, Base):
         default=attachment_is_image_default,
         comment="является ли данный файл изображением",
     )
-    
+
     # Связи
     author = relationship("User", back_populates="files")
     messages = relationship("Message", back_populates="file")
     reviews = relationship("Review", back_populates="file")
     order_previews = relationship("Order", back_populates="preview_file")
 
-class Review(SoftDeleteMixin, TimestampMixin, Base):
+
+class Review(TimestampMixin, Base):
     __repr_name__ = "Отзывы"
     __tablename__ = "reviews"
     __table_args__ = (
@@ -201,16 +209,16 @@ class Review(SoftDeleteMixin, TimestampMixin, Base):
     comment = Column(Text, nullable=True)
     executor = Column(Integer, ForeignKey("users.id"), nullable=False)
     author = Column(Integer, ForeignKey("users.id"), nullable=False)
-    
+
     # Связи
     file = relationship("File", back_populates="reviews")
     executor_user = relationship(
-        "User", 
+        "User",
         foreign_keys=[executor],
         back_populates="reviews_as_executor"
     )
     author_user = relationship(
-        "User", 
+        "User",
         foreign_keys=[author],
         back_populates="reviews_as_author"
     )

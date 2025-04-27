@@ -68,6 +68,7 @@ if Config.cors_policy_disabled:
         allow_credentials=True,
     )
 
+
 # @app.on_event("shutdown")
 # async def shutdown():
 #     if user_fetcher := getattr(app.state, "user_fetcher", None):
@@ -80,4 +81,4 @@ if Config.cors_policy_disabled:
 
 @app.get("/")
 async def home():
-   return {"data": "Hello World"}
+    return {"data": "Hello World"}

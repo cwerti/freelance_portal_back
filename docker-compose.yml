@@ -27,7 +27,7 @@ services:
 
     # run_migrations:
     #     # запуск миграций, alembic.ini будет автоматически сгенерирован по переменным среды
-    #     # скрипт запуска: docker-compose -f docker-compose.local.yml run --rm run_migrations
+    #     # скрипт запуска: docker-compose -f docker-compose.yml run --rm run_migrations
     #     restart: "unless-stopped"
     #     <<: *main
 
