@@ -3,7 +3,6 @@ import logging
 import os
 from urllib import parse
 
-from authx import AuthXConfig, AuthX
 
 
 class ConfigError(KeyError):

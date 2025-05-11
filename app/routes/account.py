@@ -68,7 +68,7 @@ async def register(
 
 
 @auth.get(
-    "/user/{user_id}",
+    "/{user_id}",
     status_code=201,
     responses={409: {"description": "User with specified login or email already exists"}}
 )

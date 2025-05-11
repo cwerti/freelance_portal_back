@@ -1,12 +1,13 @@
 import pathlib
 
 import fastapi
-from authx import AuthXConfig, AuthX
+
 from starlette.middleware.cors import CORSMiddleware
 
 from typing import TYPE_CHECKING
 
 from app.routes.account import auth
+from routes.files import files
 from utils.log_config import set_logging
 
 from core.config import Config
@@ -16,9 +17,6 @@ from routes.exceptions import add_exception_handlers
 #     from utils.auth.blocked_jwt import BlockedJWTStorage
 #     from utils.auth.user_info import UserInfoFetcher
 
-tags_metadata = [
-    # {"name": "Healthcheck", "description": "Роут для проверки соединения приложения с базой данных"},
-]
 
 description = """
 ### Права доступа к сущностям
@@ -31,6 +29,11 @@ description = """
 конфиг-переменной ``test_token``
 """
 
+tags_metadata = [
+    {"name": "User", "description": "Роуты для работы с пользователями"},
+    {"name": "Files", "description": "Роуты для работы с файлами"},
+
+]
 app = fastapi.FastAPI(
     title="Портал фриланс биржа",
     description=description,
@@ -87,4 +90,5 @@ async def home():
     return {"data": "Hello World"}
 
 
-app.include_router(auth, prefix="/auth")
+app.include_router(auth, prefix="/user", tags=["User"])
+app.include_router(files, prefix="/files", tags=["Files"])

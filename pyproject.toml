@@ -18,6 +18,8 @@ psycopg2-binary = "^2.9.10"
 pyjwt = "^2.10.1"
 pydantic = {extras = ["email"], version = "^2.11.4"}
 asyncpg = "^0.30.0"
+python-multipart = "^0.0.20"
+aiofiles = "^24.1.0"
 
 
 [tool.poetry.dev-dependencies]

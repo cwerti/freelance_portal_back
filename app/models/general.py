@@ -1,10 +1,11 @@
 from typing import Any
 import os
 import imghdr
+from uuid import UUID
 
 from sqlalchemy import (
     Column, DateTime, Integer, String, Boolean, Text, ForeignKey,
-    Index, CheckConstraint, Numeric
+    Index, CheckConstraint, Numeric, text
 )
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
@@ -46,3 +47,21 @@ class Roles(TimestampMixin, Base):
     description = Column(String(300), nullable=True)
 
     users = relationship("User", back_populates="role")
+
+
+class Files(TimestampMixin, Base):
+    """Модель файлов системы."""
+
+    __repr_name__ = "Файл"
+    __tablename__ = "files"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(512))
+    path = Column(String)
+    is_image = Column(
+        Boolean,
+        nullable=False,
+        server_default="false",
+        default=attachment_is_image_default,
+        comment="является ли данный файл изображением",
+    )
