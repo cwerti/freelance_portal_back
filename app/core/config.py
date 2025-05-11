@@ -3,6 +3,7 @@ import logging
 import os
 from urllib import parse
 
+from authx import AuthXConfig, AuthX
 
 
 class ConfigError(KeyError):
@@ -38,6 +39,7 @@ try:
         reset_password_alive_hours = os.environ.get("RESET_PASSWORD_ALIVE_HOURS", 2)
         reset_password_redirect_page = os.environ.get("RESET_PASSWORD_REDIRECT_PAGE")
 
+
     class AppConfig(ConfigAbstract):
         """Обязательные для конфигурирования настройки при запуске."""
 
@@ -49,12 +51,13 @@ try:
 
         cors_policy_disabled = os.environ.get("CORS_POLICY_DISABLED", "True").lower() == "true"
         secret = os.environ.get("SECRET", "Pepa the pig")
-
+        algorithm = "SHA256"
         # директория для хранения прикрепляемых файлов
         file_directory = os.environ.get("FILE_DIRECTORY", None)
 
         log_level = getattr(logging, os.environ.get("LOG_LEVEL", "DEBUG"))
         additional_debug = os.environ.get("ADDITIONAL_DEBUG", "False").lower() == "true"
+
 
     class DBConfig(ConfigAbstract):
         """Параметры для подключения к БД."""
@@ -68,16 +71,25 @@ try:
         db_conn_str = f"postgresql://{db_user}:{parse.quote(db_password)}@{db_host}:{db_port}/{db_name}"
         async_db_conn_str = f"postgresql+asyncpg://{db_user}:{parse.quote(db_password)}@{db_host}:{db_port}/{db_name}"
 
+
     class NotificationServiceConfig(ConfigAbstract):
         """Конфигурация для сервиса уведомлений."""
 
         notification_service_url = os.environ.get("NOTIFICATION_SERVICE_URL")
         notification_service_token = os.environ.get("NOTIFICATION_SERVICE_TOKEN")
 
+
+    class Auth(ConfigAbstract):
+        SECRET_KEY = os.environ.get("SECRET")
+        ALGORITHM = "HS256"
+        ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+
     class Config(  # noqa: D101
         AppSettings,
         AppConfig,
         DBConfig,
+        Auth,
 
     ):
         pass
@@ -85,5 +97,3 @@ try:
 except KeyError as e:
     msg = f"Unable to found environment variable {e!s}"
     raise ConfigError(msg) from e
-
-

@@ -1,9 +1,12 @@
 import pathlib
 
 import fastapi
+from authx import AuthXConfig, AuthX
 from starlette.middleware.cors import CORSMiddleware
 
 from typing import TYPE_CHECKING
+
+from app.routes.account import auth
 from utils.log_config import set_logging
 
 from core.config import Config
@@ -82,3 +85,6 @@ if Config.cors_policy_disabled:
 @app.get("/")
 async def home():
     return {"data": "Hello World"}
+
+
+app.include_router(auth, prefix="/auth")
