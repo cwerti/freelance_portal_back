@@ -53,7 +53,27 @@ class User(TimestampMixin, Base):
     password = Column(String(256))
 
     role = relationship("Role", back_populates="users")
-    # chat_associations = relationship("ChatUserAssociation", back_populates="user")
+    # Связи для чатов где пользователь клиент
+    client_chats = relationship(
+        "Chat",
+        foreign_keys="Chat.client_id",
+        back_populates="client"
+    )
+
+    # Связи для ассоциаций где пользователь клиент
+    client_associations = relationship(
+        "ChatUserAssociation",
+        foreign_keys="ChatUserAssociation.client_id",
+        back_populates="client"
+    )
+
+    # Связи для ассоциаций где пользователь исполнитель
+    executor_associations = relationship(
+        "ChatUserAssociation",
+        foreign_keys="ChatUserAssociation.executor_id",
+        back_populates="executor"
+    )
+
     # order_associations = relationship("OrderUserAssociation", back_populates="user")
     # messages = relationship("Message", back_populates="author")
     # authored_reviews = relationship("Review", foreign_keys="Review.author_id", back_populates="author")
@@ -73,7 +93,55 @@ class Role(TimestampMixin, Base):
     is_core = Column(Boolean, server_default="false")
 
     users = relationship("User", back_populates="role")
+
     # permissions = relationship("RolePermission", back_populates="role")
+
+
+class Chat(TimestampMixin, Base):
+    __tablename__ = "chats"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(Text)
+    client_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    order_id = Column(Integer, nullable=False)
+    # order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    last_message_at = Column(DateTime)
+    # order = relationship("Order")
+
+    client = relationship(
+        "User",
+        foreign_keys=[client_id],
+        back_populates="client_chats"
+    )
+    user_associations = relationship(
+        "ChatUserAssociation",
+        back_populates="chat"
+    )
+
+
+class ChatUserAssociation(TimestampMixin, Base):
+    __tablename__ = "chat_user_associations"
+
+    chat_id = Column(Integer, ForeignKey('chats.id'), primary_key=True)
+    client_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    executor_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+
+    client = relationship(
+        "User",
+        foreign_keys=[client_id],
+        back_populates="client_associations"
+    )
+
+    executor = relationship(
+        "User",
+        foreign_keys=[executor_id],
+        back_populates="executor_associations"
+    )
+
+    chat = relationship(
+        "Chat",
+        back_populates="user_associations"
+    )
 
 
 class File(TimestampMixin, Base):
@@ -140,39 +208,6 @@ class File(TimestampMixin, Base):
 #     bids = relationship("Bid", back_populates="order")
 #     user_associations = relationship("OrderUserAssociation", back_populates="order")
 #
-#
-# class OrderUserAssociation(TimestampMixin, Base):
-#     __tablename__ = "order_user_association"
-#
-#     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-#     order_id = Column(Integer, ForeignKey('orders.id'), primary_key=True)
-#
-#     user = relationship("User", back_populates="order_associations")
-#     order = relationship("Order", back_populates="user_associations")
-#
-#
-# class Chat(TimestampMixin, Base):
-#     __tablename__ = "chats"
-#
-#     id = Column(Integer, primary_key=True)
-#     name = Column(Text)
-#     client_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-#     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
-#     last_message_at = Column(DateTime)
-#
-#     order = relationship("Order", back_populates="chat")
-#     user_associations = relationship("ChatUserAssociation", back_populates="chat")
-#     messages = relationship("Message", back_populates="chat")
-#
-#
-# class ChatUserAssociation(TimestampMixin, Base):
-#     __tablename__ = "chat_user_association"
-#
-#     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
-#     chat_id = Column(Integer, ForeignKey('chats.id'), primary_key=True)
-#
-#     user = relationship("User", back_populates="chat_associations")
-#     chat = relationship("Chat", back_populates="user_associations")
 #
 #
 # class Message(TimestampMixin, Base):

@@ -112,10 +112,10 @@ async def save_file_db(
         raise ValueError("Failed to create file") from e
 
 
-async def get_file(session: AsyncSession, user_id: int) -> File:
+async def get_file(session: AsyncSession, file_id: int) -> File:
     query = (
         select(File)
-        .where(File.id == user_id)
+        .where(File.id == file_id)
         .order_by(File.deleted_at.desc())
     )
     file = (await session.execute(query)).scalars().all()

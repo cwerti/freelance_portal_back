@@ -7,6 +7,9 @@ from starlette.middleware.cors import CORSMiddleware
 from typing import TYPE_CHECKING
 
 from app.routes.account import auth
+from routes.chat.chat_associations import associations
+from routes.chat.chats import chats
+
 from routes.files import files
 from utils.log_config import set_logging
 
@@ -32,8 +35,9 @@ description = """
 tags_metadata = [
     {"name": "User", "description": "Роуты для работы с пользователями"},
     {"name": "Files", "description": "Роуты для работы с файлами"},
-
+    {"name": "Chats", "description": "Роуты для работы с чатами"}
 ]
+
 app = fastapi.FastAPI(
     title="Портал фриланс биржа",
     description=description,
@@ -92,3 +96,5 @@ async def home():
 
 app.include_router(auth, prefix="/user", tags=["User"])
 app.include_router(files, prefix="/files", tags=["Files"])
+app.include_router(chats, prefix="/chats", tags=["Chats"])
+app.include_router(associations, prefix="/chats", tags=["Chats"])
