@@ -5,3 +5,4 @@ pycache/
 .idea
 alembic.ini
 .env
+poetry.lock
