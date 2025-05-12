@@ -1,72 +1,3 @@
-# from typing import Any
-# import os
-# import imghdr
-# from uuid import UUID
-
-# from sqlalchemy import (
-#     Column, DateTime, Integer, String, Boolean, Text, ForeignKey,
-#     Index, CheckConstraint, Numeric, text
-# )
-# from sqlalchemy.orm import relationship, validates
-# from sqlalchemy.sql import func
-
-# from models.core import Base, TimestampMixin, fresh_timestamp
-
-
-# def attachment_is_image_default(context: Any) -> bool:
-#     return is_image(context.get_current_parameters()["path"])
-
-
-# def is_image(path: os.PathLike) -> bool:
-#     return imghdr.what(path) is not None
-
-
-# class User(TimestampMixin, Base):
-#     __tablename__ = "users"
-#     __table_args__ = (
-#         Index("users_email_key", "email", unique=True),
-#         CheckConstraint("email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'",
-#                         name="valid_email"),
-#     )
-
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     login = Column(String(128), nullable=False, unique=True)
-#     email = Column(String(256), nullable=False)
-#     last_name = Column(String(50), nullable=False)
-#     first_name = Column(String(50), nullable=False)
-#     password = Column(String(256))
-#     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
-
-#     role = relationship("Roles", back_populates="users")
-
-
-# class Roles(TimestampMixin, Base):
-#     __tablename__ = "roles"
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     name = Column(String(50), nullable=False)
-#     description = Column(String(300), nullable=True)
-
-#     users = relationship("User", back_populates="role")
-
-
-# class Files(TimestampMixin, Base):
-#     """Модель файлов системы."""
-
-#     __repr_name__ = "Файл"
-#     __tablename__ = "files"
-
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String(512))
-#     path = Column(String)
-#     is_image = Column(
-#         Boolean,
-#         nullable=False,
-#         server_default="false",
-#         default=attachment_is_image_default,
-#         comment="является ли данный файл изображением",
-#     )
-
-
 from typing import Any
 import os
 import imghdr
@@ -77,6 +8,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
+from pydantic import EmailStr
 
 from models.core import Base, TimestampMixin, fresh_timestamp
 
@@ -87,6 +19,12 @@ def attachment_is_image_default(context: Any) -> bool:
 
 def is_image(path: os.PathLike) -> bool:
     return imghdr.what(path) is not None
+
+user_skill_association = Table(
+    'user_skills', Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
+    Column('skill_id', Integer, ForeignKey('skills.id'), primary_key=True)
+)
 
 class OrderStatus(Base):
     __tablename__ = "order_statuses"
@@ -105,7 +43,7 @@ class User(TimestampMixin, Base):
     id = Column(Integer, primary_key=True)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     login = Column(String(128), unique=True)
-    email = Column(String(256), nullable=False)
+    email = Column(EmailStr(256), nullable=False)
     last_name = Column(String(50), nullable=False)
     first_name = Column(String(50), nullable=False)
     bio = Column(Text)
@@ -113,18 +51,15 @@ class User(TimestampMixin, Base):
     password = Column(String(256))
 
     role = relationship("Role", back_populates="users")
-    avatar = relationship("File")
     chat_associations = relationship("ChatUserAssociation", back_populates="user")
     order_associations = relationship("OrderUserAssociation", back_populates="user")
     messages = relationship("Message", back_populates="author")
     authored_reviews = relationship("Review", foreign_keys="Review.author_id", back_populates="author")
     received_reviews = relationship("Review", foreign_keys="Review.executor_id", back_populates="executor")
     client_chats = relationship("Chat", foreign_keys="Chat.client_id", back_populates="client")
+    skills = relationship("Skill", secondary=user_skill_association, back_populates="users")
+    bids = relationship("Bid", back_populates="freelancer")
     executor_chats = relationship("Chat", foreign_keys="Chat.executor_id", back_populates="executor")
-    @validates('email')
-    def validate_email(self, key, email):
-        assert '@' in email, "Invalid email address"
-        return email
 
 class Role(TimestampMixin, Base):
     __tablename__ = "roles"
@@ -167,14 +102,12 @@ class Order(TimestampMixin, Base):
     id = Column(Integer, primary_key=True)
     name = Column(Text, nullable=False)
     description = Column(Text)
-    preview_id = Column(Integer, ForeignKey("files.id"), nullable=False)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     start_price = Column(Numeric(10, 2))
     expected_price = Column(Numeric(10, 2))
     status_id = Column(Integer, ForeignKey("order_statuses.id"), nullable=False, server_default="1")  # default: open
     deadline = Column(DateTime)
-    created_at = Column(DateTime, server_default=func.now())
 
     category = relationship("Category", back_populates="orders")
     preview = relationship("File")
@@ -182,6 +115,7 @@ class Order(TimestampMixin, Base):
     status = relationship("OrderStatus")
     chat = relationship("Chat", back_populates="order", uselist=False)
     reviews = relationship("Review", back_populates="order")
+    bids = relationship("Bid", back_populates="order")
     user_associations = relationship("OrderUserAssociation", back_populates="order")
 
 class OrderUserAssociation(TimestampMixin, Base):
@@ -189,7 +123,7 @@ class OrderUserAssociation(TimestampMixin, Base):
     
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     order_id = Column(Integer, ForeignKey('orders.id'), primary_key=True)
-    relation_type = Column(String(50), nullable=False)  # 'author', 'saved', 'hidden'
+
 
     user = relationship("User", back_populates="order_associations")
     order = relationship("Order", back_populates="user_associations")
@@ -199,13 +133,10 @@ class Chat(TimestampMixin, Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(Text)
-    executor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     client_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     last_message_at = Column(DateTime)
 
-    executor = relationship("User", foreign_keys=[executor_id], back_populates="executor_chats")
-    client = relationship("User", foreign_keys=[client_id], back_populates="client_chats")
     order = relationship("Order", back_populates="chat")
     user_associations = relationship("ChatUserAssociation", back_populates="chat")
     messages = relationship("Message", back_populates="chat")
@@ -269,3 +200,35 @@ class Review(TimestampMixin, Base):
     file = relationship("File", back_populates="reviews")
     author = relationship("User", foreign_keys=[author_id], back_populates="authored_reviews")
     order = relationship("Order", back_populates="reviews")
+
+class Skill(Base):
+    __tablename__ = "skills"
+    __table_args__ = (
+        Index("idx_skill_name", "name"),
+    )
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True, nullable=False)
+    description = Column(Text)
+    
+    users = relationship("User", secondary=user_skill_association, back_populates="skills")
+
+class Bid(Base):
+    __tablename__ = "bids"
+    __table_args__ = (
+        Index("idx_bid_order_freelancer", "order_id", "freelancer_id"),
+        CheckConstraint("price > 0", name="positive_price"),
+    )
+    
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    freelancer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    price = Column(Numeric(10, 2), nullable=False)
+    comment = Column(Text)
+    status = Column(String(20), default="pending") 
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    
+    # Отношения
+    order = relationship("Order", back_populates="bids")
+    freelancer = relationship("User", back_populates="bids")
