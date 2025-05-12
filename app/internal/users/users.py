@@ -4,7 +4,7 @@ import fastapi
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, or_, select, insert
 from sqlalchemy.exc import IntegrityError
-from models import User, Roles
+from models import User, Role
 from schemas.users import RegisterUserIn
 from utils.auth.passwwords import generate_password_hash
 
@@ -88,7 +88,7 @@ async def user_create(
         user_data: RegisterUserIn,
         options: list | None = None
 ) -> User:
-    role_check_query = select(Roles).where(Roles.id == user_data.role_id)
+    role_check_query = select(Role).where(Role.id == user_data.role_id)
     if not (await session.execute(role_check_query)).scalar_one_or_none():
         raise fastapi.HTTPException(
             400,

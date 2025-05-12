@@ -9,7 +9,7 @@ from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Files
+from models import File
 
 
 async def save_file(
@@ -90,15 +90,15 @@ async def save_file_db(
         path: str,
         file: UploadFile,
         is_image: bool = True,
-) -> Files:
+) -> File:
     file_insert = (
-        insert(Files)
+        insert(File)
         .values(
             name=file.filename,
             path=path,
             is_image=is_image,
         )
-        .returning(Files)
+        .returning(File)
     )
 
     try:
@@ -112,11 +112,11 @@ async def save_file_db(
         raise ValueError("Failed to create file") from e
 
 
-async def get_file(session: AsyncSession, user_id: int) -> Files:
+async def get_file(session: AsyncSession, user_id: int) -> File:
     query = (
-        select(Files)
-        .where(Files.id == user_id)
-        .order_by(Files.deleted_at.desc())
+        select(File)
+        .where(File.id == user_id)
+        .order_by(File.deleted_at.desc())
     )
     file = (await session.execute(query)).scalars().all()
     return file
