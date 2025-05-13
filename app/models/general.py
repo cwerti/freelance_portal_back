@@ -73,11 +73,10 @@ class User(TimestampMixin, Base):
         foreign_keys="ChatUserAssociation.executor_id",
         back_populates="executor"
     )
-
+    reviews_as_reviewer = relationship("Review", back_populates="reviewer", foreign_keys="Review.reviewer_id")
+    reviews_as_reviewed = relationship("Review", back_populates="reviewed", foreign_keys="Review.reviewed_id")
     # order_associations = relationship("OrderUserAssociation", back_populates="user")
     # messages = relationship("Message", back_populates="author")
-    # authored_reviews = relationship("Review", foreign_keys="Review.author_id", back_populates="author")
-    # received_reviews = relationship("Review", foreign_keys="Review.executor_id", back_populates="executor")
     # client_chats = relationship("Chat", foreign_keys="Chat.client_id", back_populates="client")
     # skills = relationship("Skill", secondary=user_skill_association, back_populates="users")
     # bids = relationship("Bid", back_populates="freelancer")
@@ -158,7 +157,7 @@ class File(TimestampMixin, Base):
     )
 
     # messages = relationship("Message", back_populates="file")
-    # reviews = relationship("Review", back_populates="file")
+    reviews = relationship("Review", back_populates="file")
     # order_previews = relationship("Order", foreign_keys="Order.preview_id")
 
 # class RolePermission(TimestampMixin, Base):
@@ -204,7 +203,6 @@ class File(TimestampMixin, Base):
 #     author = relationship("User", foreign_keys=[author_id])
 #     status = relationship("OrderStatus")
 #     chat = relationship("Chat", back_populates="order", uselist=False)
-#     reviews = relationship("Review", back_populates="order")
 #     bids = relationship("Bid", back_populates="order")
 #     user_associations = relationship("OrderUserAssociation", back_populates="order")
 #
@@ -225,23 +223,24 @@ class File(TimestampMixin, Base):
 #     file = relationship("File")
 #
 #
-# class Review(TimestampMixin, Base):
-#     __tablename__ = "reviews"
-#     __table_args__ = (
-#         CheckConstraint("grade BETWEEN 1 AND 5", name="valid_grade"),
-#     )
-#
-#     id = Column(Integer, primary_key=True)
-#     file_id = Column(Integer, ForeignKey("files.id"))
-#     grade = Column(Integer, nullable=False)
-#     comment = Column(Text)
-#     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-#     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
-#     created_at = Column(DateTime, server_default=func.now())
-#
-#     file = relationship("File", back_populates="reviews")
-#     author = relationship("User", foreign_keys=[author_id], back_populates="authored_reviews")
-#     order = relationship("Order", back_populates="reviews")
+class Review(TimestampMixin, Base):
+    __tablename__ = "reviews"
+    __table_args__ = (
+        CheckConstraint("rating BETWEEN 1 AND 5", name="valid_rating"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    rating = Column(Integer, nullable=False)
+    file_id = Column(Integer, ForeignKey("files.id"))
+    comment = Column(Text)
+    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    reviewed_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+    file = relationship("File", back_populates="reviews")
+    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="reviews_as_reviewer")
+    reviewed = relationship("User", foreign_keys=[reviewed_id], back_populates="reviews_as_reviewed")
+#   order = relationship("Order", back_populates="reviews")
 #
 #
 # class Skill(Base):
