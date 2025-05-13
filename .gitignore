@@ -1,0 +1,8 @@
+/shelf/
+/workspace.xml
+pycache/
+ *.pyc
+.idea
+alembic.ini
+.env
+poetry.lock

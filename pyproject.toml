@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "freelance-portal-back"
+version = "0.1.0"
+description = ""
+authors = ["DyadechkovIV <dyadechkoviv@uriit.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+uvicorn = "^0.34.2"
+pip = "^25.0.1"
+fastapi = "^0.111.0"
+sqlalchemy = "~1.4.46"
+sentry-sdk = "~1.17.0"
+orjson = "~3.8.8"
+passlib = "~1.7.4"
+psycopg2-binary = "^2.9.10"
+pyjwt = "^2.10.1"
+pydantic = {extras = ["email"], version = "^2.11.4"}
+asyncpg = "^0.30.0"
+python-multipart = "^0.0.20"
+aiofiles = "^24.1.0"
+
+
+[tool.poetry.dev-dependencies]
+alembic = "^1.8.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
