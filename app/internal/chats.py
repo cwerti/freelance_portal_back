@@ -3,8 +3,8 @@ from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Chat, ChatUserAssociation, User
-from schemas.chats import ChatCreate, AssociationsCreate
+from models import Chat, ChatUserAssociation, User, File, Message
+from schemas.chats import ChatCreate, AssociationsCreate, MessageCreate
 
 
 async def create_chat(
@@ -60,7 +60,7 @@ async def create_associations(
 
     if not all([client_exists, executor_exists, chat_exists]):
         raise fastapi.HTTPException(
-            status_code=404,
+            status_code=401,
             detail="User or chat not found"
         )
 
@@ -116,3 +116,64 @@ async def get_associations(session: AsyncSession, chat_id: int) -> ChatUserAssoc
     )
     associations = (await session.execute(query)).scalars().all()
     return associations
+
+
+async def create_message(session: AsyncSession, message_info: MessageCreate) -> Message:
+    client_exists = await session.get(User, message_info.author_id)
+    chat_exists = await session.get(Chat, message_info.chat_id)
+
+    if not all([client_exists, chat_exists]):
+        raise fastapi.HTTPException(
+            status_code=401,
+            detail="User or chat not found"
+        )
+
+    if message_info.file_id is not None:
+        file_exists = await session.get(File, message_info.chat_id)
+        if file_exists is None:
+            raise fastapi.HTTPException(
+                status_code=400,
+                detail="File not found"
+            )
+
+    new_message = (
+        insert(Message)
+        .values(
+            author_id=message_info.author_id,
+            chat_id=message_info.chat_id,
+            text=message_info.text,
+            file_id=message_info.file_id,
+        )
+        .returning(Message)
+    )
+
+    try:
+        result = await session.execute(new_message)
+        return result.scalar_one()
+    except IntegrityError as e:
+        await session.rollback()
+        if "duplicate key" in str(e):
+            raise fastapi.HTTPException(
+                status_code=400,
+                detail="Message already exists"
+            )
+        raise fastapi.HTTPException(
+            status_code=500,
+            detail="Database integrity error or File not found"
+        )
+    except Exception as e:
+        await session.rollback()
+        raise fastapi.HTTPException(
+            status_code=500,
+            detail=f"Failed to create message: {str(e)}"
+        )
+
+
+async def get_message(session: AsyncSession, message_id: int) -> Message:
+    query = (
+        select(Message)
+        .where(Message.id == message_id)
+        .order_by(Message.deleted_at.desc())
+    )
+    message = (await session.execute(query)).scalars().all()
+    return message
