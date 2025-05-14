@@ -1,12 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 
-from schemas.review import Review, ReviewBase, ReviewUpdate
-from schemas.users import RegisterUserIn
-from internal.users.users import get_user
-from utils.review import (
-    get_reviews_by_reviewer, 
+from schemas.review import ReviewModel, ReviewBase
+from utils.review import ( 
     create_review, 
     get_review, 
     get_reviews_by_reviewed_user,
@@ -15,16 +11,16 @@ from utils.review import (
 )
 from utils.database_connection import db_async_session
 
-reviews = APIRouter(prefix="/reviews", tags=["reviews"])
+reviews = APIRouter(tags=["reviews"])
 
 @reviews.post("/")
 async def review_create(
-    review: Review,
+    review: ReviewModel,
     session: AsyncSession = Depends(db_async_session)
 ):
     return await create_review(session=session, review=review)
 
-@reviews.get("/{review_id}", response_model=Review)
+@reviews.get("/{review_id}")
 async def read_review(
     review_id: int,
     session: AsyncSession = Depends(db_async_session)
@@ -34,19 +30,19 @@ async def read_review(
         raise HTTPException(status_code=404, detail="Review not found")
     return session_review
 
-@reviews.get("/user/{user_id}", response_model=List[Review])
+@reviews.get("/user/{user_id}")
 async def read_reviews_for_user(
     user_id: int,
     session: AsyncSession = Depends(db_async_session),
     skip: int = 0,
-    limit: int = 100
+    limit: int = 10
 ):
     return await get_reviews_by_reviewed_user(session, user_id=user_id, skip=skip, limit=limit)
 
-@reviews.put("/{review_id}", response_model=Review)
+@reviews.put("/{review_id}")
 async def update_review(
     review_id: int,
-    review: ReviewUpdate,
+    review: ReviewBase,
     session: AsyncSession = Depends(db_async_session)
 ):
     session_review = await get_review(session, review_id=review_id)

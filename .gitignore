@@ -43,3 +43,8 @@ migrations/versions/__pycache__/bfca37b8bfaa_add_associations_id.cpython-311.pyc
 migrations/versions/__pycache__/dfa4992d87b1_add_orders.cpython-311.pyc
 migrations/versions/__pycache__/eaf15c1d81b1_edit_orders.cpython-311.pyc
 migrations/versions/__pycache__/fb1bbc41159b_add_initial_roles.cpython-311.pyc
+app/routes/__pycache__/orders.cpython-311.pyc
+app/schemas/__pycache__/order.cpython-311.pyc
+app/utils/__pycache__/orders.cpython-311.pyc
+migrations/versions/__pycache__/1a0b73ef20ec_ordera.cpython-311.pyc
+migrations/versions/__pycache__/9a7a5de9c8c1_ordera.cpython-311.pyc
