@@ -38,7 +38,7 @@ async def login(response: fastapi.Response,
     if (not user) or (not verify_password(password, user.password)):
         raise incorrect_data_exception
     else:
-        access_token = create_access_token(data={"sub": user.login})
+        access_token = create_access_token(data={"login": user.login, "id": user.id})
         response.set_cookie(key="access_token", value=access_token, httponly=True)
 
     return user
@@ -92,7 +92,7 @@ async def user_info(
     return user
 
 
-@auth.post("/logout/")
+@auth.post("/logout")
 async def logout_user(response: fastapi.Response):
     response.delete_cookie(key="access_token")
     return {'message': 'Пользователь успешно вышел из системы'}

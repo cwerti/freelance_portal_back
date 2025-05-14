@@ -74,8 +74,8 @@ class User(TimestampMixin, Base):
         back_populates="executor"
     )
 
-    # order_associations = relationship("OrderUserAssociation", back_populates="user")
-    # messages = relationship("Message", back_populates="author")
+    messages = relationship("Message", back_populates="author")
+
     # authored_reviews = relationship("Review", foreign_keys="Review.author_id", back_populates="author")
     # received_reviews = relationship("Review", foreign_keys="Review.executor_id", back_populates="executor")
     # client_chats = relationship("Chat", foreign_keys="Chat.client_id", back_populates="client")
@@ -117,6 +117,27 @@ class Chat(TimestampMixin, Base):
         "ChatUserAssociation",
         back_populates="chat"
     )
+
+    messages = relationship(
+        "Message",
+        back_populates="chat",
+        order_by="Message.id",
+        cascade="all, delete-orphan"
+    )
+
+
+class Message(TimestampMixin, Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
+    text = Column(Text)
+    file_id = Column(Integer, ForeignKey("files.id"), nullable=True)
+
+    author = relationship("User", foreign_keys=[author_id])
+    chat = relationship("Chat", foreign_keys=[chat_id])
+    file = relationship("File", foreign_keys=[file_id])
 
 
 class ChatUserAssociation(TimestampMixin, Base):
@@ -209,20 +230,6 @@ class File(TimestampMixin, Base):
 #     user_associations = relationship("OrderUserAssociation", back_populates="order")
 #
 #
-#
-# class Message(TimestampMixin, Base):
-#     __tablename__ = "messages"
-#
-#     id = Column(Integer, primary_key=True)
-#     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-#     chat_id = Column(Integer, ForeignKey("chats.id"), nullable=False)
-#     text = Column(Text)
-#     file_id = Column(Integer, ForeignKey("files.id"))
-#     is_read = Column(Boolean, server_default="false")
-#
-#     author = relationship("User", back_populates="messages")
-#     chat = relationship("Chat", back_populates="messages")
-#     file = relationship("File")
 #
 #
 # class Review(TimestampMixin, Base):
