@@ -33,8 +33,8 @@ async def associations_create(
 )
 async def get_associations_route(
         chat_id: int = fastapi.Path(..., ge=1),
+        token: str = Depends(get_token),
         session: AsyncSession = fastapi.Depends(db_async_session),
 ):
     associations = await get_associations(session, chat_id)
     return associations
-

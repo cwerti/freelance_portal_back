@@ -4,6 +4,7 @@ from typing import Optional
 import pydantic
 from pydantic import model_validator, Field
 
+from models import Message, ChatUserAssociation
 from schemas.core import Model
 
 
@@ -36,3 +37,8 @@ class MessageCreate(Model):
         if self.text is None and self.file_id is None:
             raise ValueError("Either text or file_id must be provided")
         return self
+
+
+class GetAllChats(Model):
+    last_message: dict
+    chat_association: dict

@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Chat, ChatUserAssociation, User, File, Message
-from schemas.chats import ChatCreate, AssociationsCreate, MessageCreate
+from schemas.chats import ChatCreate, AssociationsCreate, MessageCreate, GetAllChats
 
 
 async def create_chat(
@@ -177,3 +177,70 @@ async def get_message(session: AsyncSession, message_id: int) -> Message:
     )
     message = (await session.execute(query)).scalars().all()
     return message
+
+
+async def all_message_chat(session: AsyncSession, associations_info: AssociationsCreate):
+    client_exists = await session.get(User, associations_info.client_id)
+    executor_exists = await session.get(User, associations_info.executor_id)
+    chat_exists = await session.get(Chat, associations_info.chat_id)
+
+    if not all([client_exists, chat_exists, client_exists, executor_exists]):
+        raise fastapi.HTTPException(
+            status_code=401,
+            detail="Client or chat or executor not found"
+        )
+
+    try:
+        association = await get_associations(session, associations_info.chat_id)
+    except:
+        association = await create_associations(session, associations_info)
+
+    query = (
+        select(Message)
+        .where(Message.chat_id == associations_info.chat_id)
+        .order_by(Message.deleted_at.desc())
+    )
+
+    messsages_list = (await session.execute(query)).scalars().all()
+    return messsages_list
+
+
+async def get_last_message(session: AsyncSession, chat_id) -> Message:
+    chat_exists = await session.get(Chat, chat_id)
+
+    if chat_exists is None:
+        raise fastapi.HTTPException(
+            status_code=401,
+            detail="Chat not found"
+        )
+
+    query = (
+        select(Message)
+        .where(Message.chat_id == chat_id)
+        .order_by(Message.created_at.desc())
+    )
+    message_last = (await session.execute(query)).scalars().first()
+    return message_last
+
+
+async def get_my_chats(session: AsyncSession, user_id) -> [GetAllChats, ...]:
+    user_exists = await session.get(User, user_id)
+    if user_exists is None:
+        raise fastapi.HTTPException(
+            status_code=401,
+            detail="User not found"
+        )
+    query = (
+        select(ChatUserAssociation)
+        .where(ChatUserAssociation.client_id == user_id)
+        .order_by(ChatUserAssociation.deleted_at.desc())
+    )
+    chat_association_list = (await session.execute(query)).scalars().all()
+    result = []
+    for chat_association in chat_association_list:
+        last_message = await get_last_message(session, chat_association.chat_id)
+        result.append({
+            "last_message": last_message,
+            "chat_association": chat_association
+        })
+    return result

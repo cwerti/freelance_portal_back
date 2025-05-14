@@ -2,9 +2,9 @@ import fastapi
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from internal.chats import get_chat, create_message, get_message
+from internal.chats import get_chat, create_message, get_message, all_message_chat
 
-from schemas.chats import MessageCreate
+from schemas.chats import MessageCreate, AssociationsCreate
 
 from utils.auth.passwwords import get_token
 from utils.database_connection import db_async_session
@@ -33,6 +33,7 @@ async def message_create_route(
 )
 async def get_chat_route(
         message_id: int = fastapi.Path(..., ge=1),
+        token: str = Depends(get_token),
         session: AsyncSession = fastapi.Depends(db_async_session),
 ):
     chat = await get_message(session, message_id)
