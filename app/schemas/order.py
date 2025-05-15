@@ -23,3 +23,15 @@ class OrderUpdate(Model):
     start_price: Optional[float] = None
     category_id: Optional[int] = None
     status_id: Optional[int] = None
+
+class CategoryOut(Model):
+    id: int
+    name: str
+    description: str | None
+    created_at: datetime
+    updated_at: datetime
+
+class OrderOut(Model):
+    id: int
+    name: str
+    description: Optional[str]

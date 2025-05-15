@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import and_, or_
-from models.general import Order
-from schemas.order import OrderUpdate
+from models.general import Order, Category
+from schemas.order import OrderUpdate, OrderOut
 from fastapi import HTTPException, status
 from datetime import datetime
 from typing import Optional
@@ -22,7 +22,13 @@ async def create_order(session: AsyncSession, order: Order):
 
 async def get_order(session: AsyncSession, order_id: int):
     result = await session.execute(select(Order).filter(Order.id == order_id))
-    return result.scalar_one_or_none()
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Order with id {order_id} not found"
+        )
+    return order
 
 async def delete_order(session: AsyncSession, order_id: int):
     result = await session.execute(select(Order).filter(Order.id == order_id))
@@ -37,7 +43,13 @@ async def delete_order(session: AsyncSession, order_id: int):
 
 async def get_orders(session: AsyncSession, skip: int = 0, limit: int = 10):
     result = await session.execute(select(Order).offset(skip).limit(limit))
-    return result.scalars().all()
+    orders = result.scalars().all()
+    if not orders:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No orders found"
+        )
+    return orders
 
 async def update_order(
     session: AsyncSession, 
@@ -96,14 +108,86 @@ async def get_active_orders(
         query = query.where(and_(*deadline_filters))
         
     query = query.offset(skip).limit(limit)
-    if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    
+    query = query.offset(skip).limit(limit)
     result = await session.execute(query)
-    return result.scalars().all()
+    orders = result.scalars().all()
+    
+    if not orders:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active orders found with specified filters"
+        )
+    return orders
 
 async def get_orders_by_author(
-    session: AsyncSession, 
+    session: AsyncSession,
     author_id: int
 ):
     result = await session.execute(select(Order).where(Order.author_id == author_id))
+    orders = result.scalars().all()
+    if not orders:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No orders found for author with id {author_id}"
+        )
+    return orders
+
+
+async def get_all_categories(
+    session: AsyncSession,
+    skip: int = 0,
+    limit: int = 100
+) -> list[Category]:
+    result = await session.execute(
+        select(Category)
+        .order_by(Category.id)
+        .offset(skip)
+        .limit(limit)
+    )
     return result.scalars().all()
+
+async def search_orders_by_name(
+    session: AsyncSession,
+    search_query: str | None = None,
+    category_id: Optional[int] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    skip: int = 0,
+    limit: int = 10,
+) -> list[OrderOut]:
+    
+    query = select(Order).where(Order.status_id == 1)
+
+    if search_query:
+        # Ищем в названии ИЛИ в описании (регистронезависимо)
+        query = query.where(
+            or_(
+                Order.name.ilike(f"%{search_query}%"),
+                Order.description.ilike(f"%{search_query}%")
+            )
+        )
+        
+        # Дополнительные фильтры
+    if category_id is not None:
+        query = query.where(Order.category_id == category_id)
+            
+    if min_price is not None:
+        query = query.where(Order.start_price >= min_price)
+            
+    if max_price is not None:
+        query = query.where(Order.start_price <= max_price)
+        
+        # Пагинация и сортировка
+    query = query.order_by(Order.created_at.desc()).offset(skip).limit(limit)
+        
+    result = await session.execute(query)
+    orders = result.scalars().all()
+        
+    if not orders:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No orders found matching '{search_query}'"
+        )
+            
+    return orders
