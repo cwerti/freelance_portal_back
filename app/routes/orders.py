@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
+from typing import Optional
 
 from utils.orders import create_order, get_order, get_orders, delete_order, update_order, get_active_orders, get_orders_by_author
 from schemas.order import OrderModel, OrderUpdate
@@ -30,12 +32,26 @@ async def get_order_list(
     return await get_orders(session=session, skip=skip, limit=limit)
 
 @orders.get("/active")
-async def get_order_list_active(
-        session: AsyncSession = Depends(db_async_session),
-        skip: int = 0,
-        limit: int = 10
-    ):
-    return await get_active_orders(session=session, skip=skip, limit=limit)
+async def get_active_orders_route(
+    category_id: Optional[int] = None,
+    min_price: Optional[float] = Query(None, ge=0),
+    max_price: Optional[float] = Query(None, ge=0),
+    deadline_from: Optional[datetime] = None,
+    deadline_to: Optional[datetime] = None,
+    skip: int = 0,
+    limit: int = Query(10, le=100),
+    session: AsyncSession = Depends(db_async_session)
+):
+    return await get_active_orders(
+        session=session,
+        category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
+        deadline_from=deadline_from,
+        deadline_to=deadline_to,
+        skip=skip,
+        limit=limit
+    )
 
 @orders.get("/by-author/{author_id}")
 async def get_order_list_active(
