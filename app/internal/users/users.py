@@ -130,5 +130,5 @@ async def get_user(session: AsyncSession, user_id: int) -> User:
         .where(User.id == user_id)
         .order_by(User.deleted_at.desc())
     )
-    user = (await session.execute(query)).scalars().all()
+    user = (await session.execute(query)).scalar_one_or_none()
     return user

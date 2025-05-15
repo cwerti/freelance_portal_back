@@ -41,7 +41,7 @@ async def login(response: fastapi.Response,
         access_token = create_access_token(data={"login": user.login, "id": user.id})
         response.set_cookie(key="access_token", value=access_token, httponly=True)
 
-    return user
+    return user, access_token
 
 
 @auth.post(
@@ -80,7 +80,7 @@ async def user_info(
     """
     Регистрация в системе.
     """
-    user = await get_user(session, user_id)
+    user: User = await get_user(session, user_id)
 
     if not user:
         raise fastapi.HTTPException(
