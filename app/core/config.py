@@ -1,8 +1,9 @@
 """Хранилище конфигов."""
 import logging
 import os
+from typing import Dict
 from urllib import parse
-
+from fastapi import WebSocket
 
 
 class ConfigError(KeyError):
@@ -56,6 +57,8 @@ try:
 
         log_level = getattr(logging, os.environ.get("LOG_LEVEL", "DEBUG"))
         additional_debug = os.environ.get("ADDITIONAL_DEBUG", "False").lower() == "true"
+
+        active_connections: Dict[int, WebSocket] = {}
 
 
     class DBConfig(ConfigAbstract):

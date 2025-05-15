@@ -118,7 +118,7 @@ async def get_associations(session: AsyncSession, chat_id: int) -> ChatUserAssoc
     return associations
 
 
-async def create_message(session: AsyncSession, message_info: MessageCreate) -> Message:
+async def send_message(session: AsyncSession, message_info: MessageCreate) -> Message:
     client_exists = await session.get(User, message_info.author_id)
     chat_exists = await session.get(Chat, message_info.chat_id)
 
@@ -237,10 +237,25 @@ async def get_my_chats(session: AsyncSession, user_id) -> [GetAllChats, ...]:
     )
     chat_association_list = (await session.execute(query)).scalars().all()
     result = []
+
     for chat_association in chat_association_list:
         last_message = await get_last_message(session, chat_association.chat_id)
+        users_list = [chat_association.executor_id, chat_association.client_id]
+        users_list.remove(user_id)
+        user_exists = await session.get(User, users_list[0])
         result.append({
             "last_message": last_message,
-            "chat_association": chat_association
+            "chat_association": chat_association,
+            "companion": user_exists
         })
     return result
+
+
+async def get_user_chat(session: AsyncSession, chat_id: int) -> [int, int]:
+    query = (
+        select(ChatUserAssociation)
+        .where(ChatUserAssociation.chat_id == chat_id)
+        .order_by(ChatUserAssociation.deleted_at.desc())
+    )
+    chat_association = (await session.execute(query)).scalar_one_or_none()
+    return chat_association.client_id, chat_association.executor_id
