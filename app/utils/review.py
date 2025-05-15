@@ -103,8 +103,8 @@ async def update_review(session: AsyncSession, review_id: int, review: ReviewBas
                 detail=f"Review with id {review_id} not found"
             )
 
-        if review.text is not None:
-            db_review.text = review.text
+        if review.comment is not None:
+            db_review.comment = review.comment
         if review.rating is not None:
             db_review.rating = review.rating
         
