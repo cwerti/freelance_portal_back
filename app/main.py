@@ -6,9 +6,11 @@ from starlette.middleware.cors import CORSMiddleware
 
 from typing import TYPE_CHECKING
 
-from app.routes.account import auth
+from routes.account import auth
 from routes.chat.chat_associations import associations
 from routes.chat.chats import chats
+from routes.reviews import reviews
+from routes.orders import orders
 from routes.chat.messages import message
 
 from routes.files import files
@@ -69,7 +71,6 @@ default_errors = {
 
 add_exception_handlers(app)
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -100,3 +101,6 @@ app.include_router(files, prefix="/files", tags=["Files"])
 app.include_router(chats, prefix="/chats", tags=["Chats"])
 app.include_router(associations, prefix="/chats", tags=["Chats"])
 app.include_router(message, prefix="/chats", tags=["Chats"])
+
+app.include_router(reviews, prefix="/reviews", tags=["reviews"])
+app.include_router(orders, prefix="/orders", tags=["orders"])
