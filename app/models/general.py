@@ -28,12 +28,12 @@ def is_image(path: os.PathLike) -> bool:
 # )
 
 
-# class OrderStatus(Base):
-#     __tablename__ = "order_statuses"
-#
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String(20), nullable=False, unique=True)  # open, in_progress, completed, cancelled
-#     description = Column(Text)
+class OrderStatus(Base):
+    __tablename__ = "order_statuses"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(20), nullable=False, unique=True)  # open, in_progress, completed, cancelled
+    description = Column(Text)
 
 
 class User(TimestampMixin, Base):
@@ -73,11 +73,10 @@ class User(TimestampMixin, Base):
         foreign_keys="ChatUserAssociation.executor_id",
         back_populates="executor"
     )
-
     messages = relationship("Message", back_populates="author")
-
-    # authored_reviews = relationship("Review", foreign_keys="Review.author_id", back_populates="author")
-    # received_reviews = relationship("Review", foreign_keys="Review.executor_id", back_populates="executor")
+    reviews_as_reviewer = relationship("Review", back_populates="reviewer", foreign_keys="Review.reviewer_id")
+    reviews_as_reviewed = relationship("Review", back_populates="reviewed", foreign_keys="Review.reviewed_id")
+    # messages = relationship("Message", back_populates="author")
     # client_chats = relationship("Chat", foreign_keys="Chat.client_id", back_populates="client")
     # skills = relationship("Skill", secondary=user_skill_association, back_populates="users")
     # bids = relationship("Bid", back_populates="freelancer")
@@ -179,7 +178,7 @@ class File(TimestampMixin, Base):
     )
 
     # messages = relationship("Message", back_populates="file")
-    # reviews = relationship("Review", back_populates="file")
+    reviews = relationship("Review", back_populates="file")
     # order_previews = relationship("Order", foreign_keys="Order.preview_id")
 
 # class RolePermission(TimestampMixin, Base):
@@ -193,62 +192,73 @@ class File(TimestampMixin, Base):
 #     role = relationship("Role", back_populates="permissions")
 
 
-# class Category(TimestampMixin, Base):
-#     __tablename__ = "categories"
-#
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String(100), nullable=False, unique=True)
-#     description = Column(Text)
-#     parent_id = Column(Integer, ForeignKey("categories.id"))
-#
-#     orders = relationship("Order", back_populates="category")
+class Category(TimestampMixin, Base):
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False, unique=True)
+    description = Column(Text)
+
+    orders = relationship("Order", back_populates="category")
 
 
-# class Order(TimestampMixin, Base):
-#     __tablename__ = "orders"
-#     __table_args__ = (
-#         CheckConstraint("start_price >= 0", name="positive_price"),
-#     )
+class Order(TimestampMixin, Base):
+    __tablename__ = "orders"
+    __table_args__ = (
+        CheckConstraint("start_price >= 0", name="positive_price"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    name = Column(Text, nullable=False)
+    description = Column(Text)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    start_price = Column(Numeric(10, 2))
+    expected_price = Column(Numeric(10, 2))
+    status_id = Column(Integer, ForeignKey("order_statuses.id"), nullable=False, server_default="1")
+    deadline = Column(DateTime)
 #
-#     id = Column(Integer, primary_key=True)
-#     name = Column(Text, nullable=False)
-#     description = Column(Text)
-#     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-#     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
-#     start_price = Column(Numeric(10, 2))
-#     expected_price = Column(Numeric(10, 2))
-#     status_id = Column(Integer, ForeignKey("order_statuses.id"), nullable=False, server_default="1")  # default: open
-#     deadline = Column(DateTime)
-#
-#     category = relationship("Category", back_populates="orders")
+    category = relationship("Category", back_populates="orders")
 #     preview = relationship("File")
-#     author = relationship("User", foreign_keys=[author_id])
-#     status = relationship("OrderStatus")
+    # author = relationship("User", foreign_keys=[author_id])
+    status = relationship("OrderStatus")
 #     chat = relationship("Chat", back_populates="order", uselist=False)
-#     reviews = relationship("Review", back_populates="order")
 #     bids = relationship("Bid", back_populates="order")
-#     user_associations = relationship("OrderUserAssociation", back_populates="order")
 #
 #
 #
 #
-# class Review(TimestampMixin, Base):
-#     __tablename__ = "reviews"
-#     __table_args__ = (
-#         CheckConstraint("grade BETWEEN 1 AND 5", name="valid_grade"),
-#     )
-#
-#     id = Column(Integer, primary_key=True)
-#     file_id = Column(Integer, ForeignKey("files.id"))
-#     grade = Column(Integer, nullable=False)
-#     comment = Column(Text)
-#     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-#     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
-#     created_at = Column(DateTime, server_default=func.now())
-#
-#     file = relationship("File", back_populates="reviews")
-#     author = relationship("User", foreign_keys=[author_id], back_populates="authored_reviews")
-#     order = relationship("Order", back_populates="reviews")
+class Review(TimestampMixin, Base):
+    __tablename__ = "reviews"
+    __table_args__ = (
+        CheckConstraint("rating BETWEEN 1 AND 5", name="valid_rating"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    rating = Column(Integer, nullable=False)
+    file_id = Column(Integer, ForeignKey("files.id"))
+    comment = Column(Text)
+    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    reviewed_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+    file = relationship("File", back_populates="reviews")
+    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="reviews_as_reviewer")
+    reviewed = relationship("User", foreign_keys=[reviewed_id], back_populates="reviews_as_reviewed")
+#   order = relationship("Order", back_populates="reviews")
+
+# class Notification(Base):
+#     __tablename__ = "notifications"
+
+#     id = Column(Integer, primary_key=True, index=True)
+#     user_id = Column(Integer, ForeignKey("users.id"))
+#     message = Column(String(255))
+#     is_read = Column(Boolean, default=False)
+#     created_at = Column(DateTime, default=fresh_timestamp())
+#     related_order_id = Column(Integer, ForeignKey("orders.id"))
+
+#     user = relationship("User", back_populates="notifications")
+#     order = relationship("Order")
 #
 #
 # class Skill(Base):
