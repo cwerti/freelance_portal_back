@@ -69,15 +69,15 @@ default_errors = {
 
 add_exception_handlers(app)
 
-if Config.cors_policy_disabled:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
-        expose_headers=["Content-Disposition"],
-        allow_credentials=True,
-    )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
+    allow_credentials=True,
+)
 
 
 # @app.on_event("shutdown")
