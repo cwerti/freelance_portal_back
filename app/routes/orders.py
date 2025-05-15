@@ -7,7 +7,7 @@ from utils.orders import create_order, get_order, get_orders, delete_order, upda
 from schemas.order import OrderModel, OrderUpdate
 from utils.database_connection import db_async_session
 
-orders = APIRouter(prefix="/orders", tags=["orders"])
+orders = APIRouter()
 
 @orders.post("/")
 async def order_create(

@@ -71,7 +71,6 @@ default_errors = {
 
 add_exception_handlers(app)
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -103,5 +102,5 @@ app.include_router(chats, prefix="/chats", tags=["Chats"])
 app.include_router(associations, prefix="/chats", tags=["Chats"])
 app.include_router(message, prefix="/chats", tags=["Chats"])
 
-app.include_router(reviews)
-app.include_router(orders)
+app.include_router(reviews, prefix="/reviews", tags=["reviews"])
+app.include_router(orders, prefix="/orders", tags=["orders"])

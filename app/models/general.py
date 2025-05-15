@@ -77,7 +77,6 @@ class User(TimestampMixin, Base):
     reviews_as_reviewer = relationship("Review", back_populates="reviewer", foreign_keys="Review.reviewer_id")
     reviews_as_reviewed = relationship("Review", back_populates="reviewed", foreign_keys="Review.reviewed_id")
     # messages = relationship("Message", back_populates="author")
-    # client_chats = relationship("Chat", foreign_keys="Chat.client_id", back_populates="client")
     # skills = relationship("Skill", secondary=user_skill_association, back_populates="users")
     # bids = relationship("Bid", back_populates="freelancer")
     # executor_chats = relationship("Chat", foreign_keys="Chat.executor_id", back_populates="executor")
@@ -102,10 +101,8 @@ class Chat(TimestampMixin, Base):
     id = Column(Integer, primary_key=True)
     name = Column(Text)
     client_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    order_id = Column(Integer, nullable=False)
-    # order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     last_message_at = Column(DateTime)
-    # order = relationship("Order")
 
     client = relationship(
         "User",
@@ -177,9 +174,9 @@ class File(TimestampMixin, Base):
         default=attachment_is_image_default,
     )
 
-    # messages = relationship("Message", back_populates="file")
     reviews = relationship("Review", back_populates="file")
-    # order_previews = relationship("Order", foreign_keys="Order.preview_id")
+
+
 
 # class RolePermission(TimestampMixin, Base):
 #     __tablename__ = "role_permissions"
@@ -217,17 +214,11 @@ class Order(TimestampMixin, Base):
     expected_price = Column(Numeric(10, 2))
     status_id = Column(Integer, ForeignKey("order_statuses.id"), nullable=False, server_default="1")
     deadline = Column(DateTime)
-#
+
     category = relationship("Category", back_populates="orders")
-#     preview = relationship("File")
-    # author = relationship("User", foreign_keys=[author_id])
     status = relationship("OrderStatus")
-#     chat = relationship("Chat", back_populates="order", uselist=False)
-#     bids = relationship("Bid", back_populates="order")
-#
-#
-#
-#
+
+
 class Review(TimestampMixin, Base):
     __tablename__ = "reviews"
     __table_args__ = (

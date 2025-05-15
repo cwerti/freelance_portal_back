@@ -11,7 +11,7 @@ from utils.review import (
 )
 from utils.database_connection import db_async_session
 
-reviews = APIRouter(tags=["reviews"])
+reviews = APIRouter()
 
 @reviews.post("/")
 async def review_create(
