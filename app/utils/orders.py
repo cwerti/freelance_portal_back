@@ -29,7 +29,7 @@ async def get_order(session: AsyncSession, order_id: int):
     if not order:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Order with id {order_id} not found"
+            detail=f"Ордер с номером {order_id} не найден"
         )
     return order
 
@@ -50,7 +50,7 @@ async def get_orders(session: AsyncSession, skip: int = 0, limit: int = 10):
     if not orders:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No orders found"
+            detail="Ордеров не нашлось"
         )
     return orders
 
@@ -68,7 +68,7 @@ async def update_order(
     if not db_order:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Order with id {order_id} not found"
+            detail=f"Ордер с номером {order_id} не найден"
         )
         
     update_data = order_update.dict(exclude_unset=True)
@@ -119,7 +119,7 @@ async def get_active_orders(
     if not orders:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No active orders found with specified filters"
+            detail="Нет активных ордеров, удовлетворяющих фильтрам"
         )
     return orders
 
@@ -132,7 +132,7 @@ async def get_orders_by_author(
     if not orders:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No orders found for author with id {author_id}"
+            detail=f"Не найдено ордеров с номером {author_id}"
         )
     return orders
 
@@ -163,7 +163,7 @@ async def search_orders_by_name(
     query = select(Order).where(Order.status_id == 1)
 
     if search_query:
-        # Ищем в названии ИЛИ в описании (регистронезависимо)
+        # Ищем в названии ИЛИ в описании
         query = query.where(
             or_(
                 Order.name.ilike(f"%{search_query}%"),
@@ -171,7 +171,6 @@ async def search_orders_by_name(
             )
         )
         
-        # Дополнительные фильтры
     if category_id is not None:
         query = query.where(Order.category_id == category_id)
             
@@ -181,7 +180,6 @@ async def search_orders_by_name(
     if max_price is not None:
         query = query.where(Order.start_price <= max_price)
         
-        # Пагинация и сортировка
     query = query.order_by(Order.created_at.desc()).offset(skip).limit(limit)
         
     result = await session.execute(query)

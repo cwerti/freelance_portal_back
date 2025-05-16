@@ -8,7 +8,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
-from pydantic import EmailStr
 from enum import IntEnum
 
 from models.core import Base, TimestampMixin, fresh_timestamp
@@ -29,12 +28,14 @@ user_role_association = Table(
     Column('role_id', Integer, ForeignKey('roles.id'), primary_key=True)
 )
 
+
 class OrderStatus(Base):
     __tablename__ = "order_statuses"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(20), nullable=False, unique=True)  # open, in_progress, completed, cancelled
     description = Column(Text)
+
 
 class User(TimestampMixin, Base):
     __tablename__ = "users"
@@ -77,10 +78,9 @@ class User(TimestampMixin, Base):
     messages = relationship("Message", back_populates="author")
     reviews_as_reviewer = relationship("Review", back_populates="reviewer", foreign_keys="Review.reviewer_id")
     reviews_as_reviewed = relationship("Review", back_populates="reviewed", foreign_keys="Review.reviewed_id")
-    # messages = relationship("Message", back_populates="author")
     roles = relationship("Role", secondary=user_role_association, back_populates="users")
-    # executor_chats = relationship("Chat", foreign_keys="Chat.executor_id", back_populates="executor")
     notifications = relationship("Notification", back_populates="user",)
+
 
 class Role(TimestampMixin, Base):
     __tablename__ = "roles"
@@ -91,7 +91,7 @@ class Role(TimestampMixin, Base):
     is_core = Column(Boolean, server_default="false")
 
     users = relationship("User", back_populates="role")
-    # permissions = relationship("RolePermission", back_populates="role")
+
 
 class Chat(TimestampMixin, Base):
     __tablename__ = "chats"
@@ -173,18 +173,6 @@ class File(TimestampMixin, Base):
     )
 
     reviews = relationship("Review", back_populates="file")
-
-
-
-# class RolePermission(TimestampMixin, Base):
-#     __tablename__ = "role_permissions"
-#
-#     role_id = Column(Integer, ForeignKey("roles.id"), primary_key=True)
-#     permission = Column(Text, primary_key=True)
-#     created_at = Column(DateTime, default=fresh_timestamp())
-#     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-#
-#     role = relationship("Role", back_populates="permissions")
 
 
 class Category(TimestampMixin, Base):

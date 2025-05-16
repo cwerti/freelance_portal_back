@@ -49,12 +49,6 @@ async def update_review(
     if session_review is None:
         raise HTTPException(status_code=404, detail="Review not found")
     
-    # if session_review.reviewer_id != current_user.id:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="You can only update your own reviews"
-    #     )
-    
     return await update_review_db(session=session, review_id=review_id, review=review)
 
 @reviews.delete("/{review_id}")
@@ -65,12 +59,6 @@ async def delete_review(
     session_review = await get_review(session, review_id=review_id)
     if session_review is None:
         raise HTTPException(status_code=404, detail="Review not found")
-    
-    # if session_review.reviewer_id != current_user.id and not current_user.is_superuser:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="You can only delete your own reviews"
-    #     )
     
     await delete_review_db(session=session, review_id=review_id)
     return {"detail": "Review deleted successfully"}

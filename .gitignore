@@ -59,3 +59,4 @@ app/routes/__pycache__/bids.cpython-311.pyc
 app/utils/__pycache__/bids.cpython-311.pyc
 migrations/versions/__pycache__/a1c6579a1af8_bid.cpython-311.pyc
 migrations/versions/__pycache__/6987bb2955ed_skills.cpython-311.pyc
+app/routes/chat/__pycache__/web_socket.cpython-311.pyc
