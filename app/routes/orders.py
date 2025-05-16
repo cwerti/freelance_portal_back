@@ -54,7 +54,7 @@ async def get_active_orders_route(
         limit=limit
     )
 
-@orders.get("/by-author/{user_id}")
+@orders.get("/by-author/{author_id}")
 async def get_order_list_active(
         author_id: int,
         session: AsyncSession = Depends(db_async_session),
