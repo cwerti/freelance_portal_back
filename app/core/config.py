@@ -84,7 +84,7 @@ try:
     class Auth(ConfigAbstract):
         SECRET_KEY = os.environ.get("SECRET")
         ALGORITHM = "HS256"
-        ACCESS_TOKEN_EXPIRE_MINUTES = 30
+        ACCESS_TOKEN_EXPIRE_MINUTES = 3000000
 
 
     class Config(  # noqa: D101

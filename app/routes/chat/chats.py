@@ -65,6 +65,8 @@ async def get_chat_route(
         token: str = Depends(get_token),
         session: AsyncSession = fastapi.Depends(db_async_session),
 ):
-    token = jwt.decode(token, Config.SECRET_KEY, Config.ALGORITHM)
-    res = await get_my_chats(session, token["id"])
+    print("\n\n\n\n\n\n")
+    print(token)
+    qwe = jwt.decode(token, Config.SECRET_KEY, Config.ALGORITHM)
+    res = await get_my_chats(session, qwe["id"])
     return res
