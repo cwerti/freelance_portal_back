@@ -13,6 +13,7 @@ from routes.chat.web_socket import web
 from routes.reviews import reviews
 from routes.orders import orders
 from routes.chat.messages import message
+from routes.bids import bids
 
 from routes.files import files
 from utils.log_config import set_logging
@@ -106,5 +107,6 @@ app.include_router(message, prefix="/chats", tags=["Chats"])
 
 app.include_router(reviews, prefix="/reviews", tags=["reviews"])
 app.include_router(orders, prefix="/orders", tags=["orders"])
-
+app.include_router(bids, prefix="/bids", tags=["bids"])
 app.include_router(web, tags=["Websockets"])
+

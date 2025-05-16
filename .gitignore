@@ -49,3 +49,12 @@ app/utils/__pycache__/orders.cpython-311.pyc
 migrations/versions/__pycache__/1a0b73ef20ec_ordera.cpython-311.pyc
 migrations/versions/__pycache__/9a7a5de9c8c1_ordera.cpython-311.pyc
 migrations/versions/__pycache__/340b88c972b7_kategorii_statusi_init.cpython-311.pyc
+migrations/versions/__pycache__/e4deb457cf45_last.cpython-311.pyc
+migrations/versions/__pycache__/48fb16459c98_fix_migration_holazsx.cpython-311.pyc
+migrations/versions/__pycache__/416d3acf91de_add_messages.cpython-311.pyc
+app/routes/chat/__pycache__/messages.cpython-311.pyc
+app/schemas/__pycache__/bids.cpython-311.pyc
+migrations/versions/__pycache__/1cf418b7bc8b_bid.cpython-311.pyc
+app/routes/__pycache__/bids.cpython-311.pyc
+app/utils/__pycache__/bids.cpython-311.pyc
+migrations/versions/__pycache__/a1c6579a1af8_bid.cpython-311.pyc
