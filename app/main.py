@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from routes.account import auth
 from routes.chat.chat_associations import associations
 from routes.chat.chats import chats
+from routes.chat.web_socket import web
 from routes.reviews import reviews
 from routes.orders import orders
 from routes.chat.messages import message
@@ -39,7 +40,8 @@ description = """
 tags_metadata = [
     {"name": "User", "description": "Роуты для работы с пользователями"},
     {"name": "Files", "description": "Роуты для работы с файлами"},
-    {"name": "Chats", "description": "Роуты для работы с чатами"}
+    {"name": "Chats", "description": "Роуты для работы с чатами"},
+    {"name": "Websockets","description": "Роуты для работы с веб-сокетами"}
 ]
 
 app = fastapi.FastAPI(
@@ -106,3 +108,5 @@ app.include_router(message, prefix="/chats", tags=["Chats"])
 app.include_router(reviews, prefix="/reviews", tags=["reviews"])
 app.include_router(orders, prefix="/orders", tags=["orders"])
 app.include_router(bids, prefix="/bids", tags=["bids"])
+app.include_router(web, tags=["Websockets"])
+
