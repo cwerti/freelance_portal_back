@@ -4,20 +4,23 @@ from sqlalchemy import and_, or_
 from models.general import Order, Category
 from schemas.order import OrderUpdate, OrderOut
 from fastapi import HTTPException, status
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 async def create_order(session: AsyncSession, order: Order):
+    deadline_utc = order.deadline.astimezone(timezone.utc).replace(tzinfo=None) if order.deadline else None
+    
     db_order = Order(
         author_id=order.author_id,
         name=order.name,
         description=order.description,
-        start_price=order.start_price, 
-        category_id=order.category_id
+        start_price=order.start_price,
+        category_id=order.category_id,
+        deadline=deadline_utc
     )
     session.add(db_order)
-    await session.commit()  
-    await session.refresh(db_order)  
+    await session.commit()
+    await session.refresh(db_order)
     return db_order
 
 async def get_order(session: AsyncSession, order_id: int):

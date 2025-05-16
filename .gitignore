@@ -58,3 +58,4 @@ migrations/versions/__pycache__/1cf418b7bc8b_bid.cpython-311.pyc
 app/routes/__pycache__/bids.cpython-311.pyc
 app/utils/__pycache__/bids.cpython-311.pyc
 migrations/versions/__pycache__/a1c6579a1af8_bid.cpython-311.pyc
+migrations/versions/__pycache__/6987bb2955ed_skills.cpython-311.pyc

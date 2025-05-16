@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from models.general import Order, Bid, Notification, BidStatus
-from sqlalchemy import update
+from sqlalchemy import update, func
 
 
 async def get_order_author_id_by_bid(
@@ -141,32 +141,27 @@ async def reject_other_bids_and_notify(
     accepted_bid_id: int,
     session: AsyncSession
 ):
-    # 1. Находим все отклоняемые отклики
-    rejected_bids_result = await session.execute(
-        select(Bid)
-        .where(Bid.order_id == order_id)
-        .where(Bid.id != accepted_bid_id)
-        .where(Bid.status == BidStatus.PENDING)  # Только отклики в статусе PENDING
-    )
-    rejected_bids = rejected_bids_result.scalars().all()
-
-    # 2. Обновляем статус всех отклоняемых откликов
-    await session.execute(
-        update(Bid)
-        .where(Bid.order_id == order_id)
-        .where(Bid.id != accepted_bid_id)
-        .where(Bid.status == BidStatus.PENDING)
-        .values(status=BidStatus.REJECTED)
-    )
-
-    # 3. Создаем уведомления для каждого отклоненного отклика
+    rejected_bids = (await session.execute(
+            select(Bid)
+            .where(Bid.order_id == order_id)
+            .where(Bid.status == BidStatus.PENDING)
+            )
+        ).scalars().all()
+    
+    if not rejected_bids:
+        return
+    
+    # 2. Обновляем статус и создаем уведомления
+    notifications = []
     for bid in rejected_bids:
-        notification = Notification(
-            user_id=bid.user_id,  # ID пользователя, чей отклик отклонен
-            message=f"Your bid #{bid.id} for order {bid.order_id} was rejected",
-            is_read=False
+        bid.status = BidStatus.REJECTED
+        notifications.append(
+            Notification(
+                user_id=bid.user_id,
+                message=f"Your bid #{bid.id} was rejected",
+                is_read=False
+            )
         )
-        session.add(notification)
-
-    # 4. Фиксируем изменения
+    
+    session.add_all(notifications)
     await session.commit()

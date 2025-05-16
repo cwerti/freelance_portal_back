@@ -4,9 +4,8 @@ from utils.database_connection import db_async_session
 from sqlalchemy import select, update
 from schemas.bids import BidCreate, BidStatus, NotificationResponse, BidResponse
 from models.general import Bid, Order, Notification
-from utils.bids import notify_author_about_new_bid, get_order_author_id_by_bid, get_bids_by_user, update_bid_status_by_bid_id, reject_other_bids_and_notify
+from utils.bids import notify_author_about_new_bid, get_bids_by_user, update_bid_status_by_bid_id, reject_other_bids_and_notify
 from typing import List
-
 
 bids = APIRouter()
 
@@ -25,7 +24,6 @@ async def create_bid(
     order = (await session.get(Order, order_id))
     if not order or order.status_id != 1:
         raise HTTPException(status_code=404, detail="Order not available for bidding")
-    
 
     # Проверка существующего отклика
     existing_bid = (await session.execute(
@@ -68,7 +66,6 @@ async def accept_bid(
     # if bid.order.author_id != current_user.id:
     #     raise HTTPException(status_code=403, detail="Only order author can accept bids")
     
-    
     await update_bid_status_by_bid_id(bid_id, 2, session)
 
     await reject_other_bids_and_notify(Bid.order_id, Bid.id, session)
@@ -83,7 +80,6 @@ async def accept_bid(
     await session.commit()
     
     return {"message": "Bid accepted successfully"}
-
 
 @bids.patch("/bids/{bid_id}/reject")
 async def reject_bid(
