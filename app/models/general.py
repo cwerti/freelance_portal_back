@@ -4,11 +4,12 @@ import imghdr
 
 from sqlalchemy import (
     Column, DateTime, Integer, String, Boolean, Text, ForeignKey,
-    Index, CheckConstraint, Numeric, Table
+    Index, CheckConstraint, Numeric, Enum
 )
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
 from pydantic import EmailStr
+from enum import IntEnum
 
 from models.core import Base, TimestampMixin, fresh_timestamp
 
@@ -53,6 +54,7 @@ class User(TimestampMixin, Base):
     password = Column(String(256))
 
     role = relationship("Role", back_populates="users")
+    bids = relationship("Bid", back_populates="user")
     # Связи для чатов где пользователь клиент
     client_chats = relationship(
         "Chat",
@@ -78,8 +80,8 @@ class User(TimestampMixin, Base):
     reviews_as_reviewed = relationship("Review", back_populates="reviewed", foreign_keys="Review.reviewed_id")
     # messages = relationship("Message", back_populates="author")
     # skills = relationship("Skill", secondary=user_skill_association, back_populates="users")
-    # bids = relationship("Bid", back_populates="freelancer")
     # executor_chats = relationship("Chat", foreign_keys="Chat.executor_id", back_populates="executor")
+    notifications = relationship("Notification", back_populates="user",)
 
 
 class Role(TimestampMixin, Base):
@@ -217,6 +219,7 @@ class Order(TimestampMixin, Base):
 
     category = relationship("Category", back_populates="orders")
     status = relationship("OrderStatus")
+    bids = relationship("Bid", back_populates="orders")
 
 
 class Review(TimestampMixin, Base):
@@ -238,18 +241,16 @@ class Review(TimestampMixin, Base):
     reviewed = relationship("User", foreign_keys=[reviewed_id], back_populates="reviews_as_reviewed")
 #   order = relationship("Order", back_populates="reviews")
 
-# class Notification(Base):
-#     __tablename__ = "notifications"
+class Notification(Base):
+    __tablename__ = "notifications"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    message = Column(String(200))
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=fresh_timestamp())
 
-#     id = Column(Integer, primary_key=True, index=True)
-#     user_id = Column(Integer, ForeignKey("users.id"))
-#     message = Column(String(255))
-#     is_read = Column(Boolean, default=False)
-#     created_at = Column(DateTime, default=fresh_timestamp())
-#     related_order_id = Column(Integer, ForeignKey("orders.id"))
-
-#     user = relationship("User", back_populates="notifications")
-#     order = relationship("Order")
+    user = relationship("User", back_populates="notifications")
 #
 #
 # class Skill(Base):
@@ -265,22 +266,23 @@ class Review(TimestampMixin, Base):
 #     users = relationship("User", secondary=user_skill_association, back_populates="skills")
 #
 #
-# class Bid(Base):
-#     __tablename__ = "bids"
-#     __table_args__ = (
-#         Index("idx_bid_order_freelancer", "order_id", "freelancer_id"),
-#         CheckConstraint("price > 0", name="positive_price"),
-#     )
-#
-#     id = Column(Integer, primary_key=True)
-#     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
-#     freelancer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-#     price = Column(Numeric(10, 2), nullable=False)
-#     comment = Column(Text)
-#     status = Column(String(20), default="pending")
-#     created_at = Column(DateTime, server_default=func.now())
-#     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-#
-#     # Отношения
-#     order = relationship("Order", back_populates="bids")
-#     freelancer = relationship("User", back_populates="bids")
+class BidStatus(IntEnum):
+    PENDING = 1
+    ACCEPTED = 2
+    REJECTED = 3
+
+class Bid(Base, TimestampMixin):
+    __tablename__ = "bids"
+    __table_args__ = (
+        CheckConstraint("price > 0", name="positive_price"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    price = Column(Numeric(10, 2), nullable=False)
+    comment = Column(Text)
+    status = Column(Enum(BidStatus), default=BidStatus.PENDING)
+
+    orders = relationship("Order", back_populates="bids")
+    user = relationship("User", back_populates="bids")
