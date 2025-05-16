@@ -56,7 +56,6 @@ async def users_exists(
 
     return users
 
-
 async def check_credentials(session: AsyncSession, login: str, email: str, user_id: int = None) -> None:  # noqa: C901
     """
     Проверка данных для регистрации или создания нового пользователя.

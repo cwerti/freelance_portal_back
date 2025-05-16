@@ -18,7 +18,7 @@ async def create_chat(
             client_id=chat_info.client_id,
             order_id=chat_info.order_id
         )
-        .returning(Chat)
+        .returning(Chat.id)
     )
 
     try:
@@ -38,7 +38,7 @@ async def get_chat(session: AsyncSession, chat_id: int) -> Chat:
         .where(Chat.id == chat_id)
         .order_by(Chat.deleted_at.desc())
     )
-    chat = (await session.execute(query)).scalars().all()
+    chat = (await session.execute(query)).scalar_one_or_none()
     return chat
 
 
@@ -114,7 +114,7 @@ async def get_associations(session: AsyncSession, chat_id: int) -> ChatUserAssoc
         .where(ChatUserAssociation.chat_id == chat_id)
         .order_by(ChatUserAssociation.deleted_at.desc())
     )
-    associations = (await session.execute(query)).scalars().all()
+    associations = (await session.execute(query)).scalar_one_or_none()
     return associations
 
 
@@ -179,6 +179,16 @@ async def get_message(session: AsyncSession, message_id: int) -> Message:
     return message
 
 
+async def get_messages_chat(session: AsyncSession, chat_id: int) -> [Message, ...]:
+    query = (
+        select(Message)
+        .where(Message.chat_id == chat_id)
+        .order_by(Message.deleted_at.desc())
+    )
+    messages = (await session.execute(query)).scalars().all()
+    return messages
+
+
 async def all_message_chat(session: AsyncSession, associations_info: AssociationsCreate):
     client_exists = await session.get(User, associations_info.client_id)
     executor_exists = await session.get(User, associations_info.executor_id)
@@ -232,7 +242,7 @@ async def get_my_chats(session: AsyncSession, user_id) -> [GetAllChats, ...]:
         )
     query = (
         select(ChatUserAssociation)
-        .where(ChatUserAssociation.client_id == user_id)
+        .where((ChatUserAssociation.client_id == user_id) | (ChatUserAssociation.executor_id == user_id))
         .order_by(ChatUserAssociation.deleted_at.desc())
     )
     chat_association_list = (await session.execute(query)).scalars().all()
@@ -259,3 +269,15 @@ async def get_user_chat(session: AsyncSession, chat_id: int) -> [int, int]:
     )
     chat_association = (await session.execute(query)).scalar_one_or_none()
     return chat_association.client_id, chat_association.executor_id
+
+
+async def get_chat_by_user(session: AsyncSession, me_id: int, user_id: int):
+    query = (
+        select(ChatUserAssociation)
+        .where(
+            ((ChatUserAssociation.executor_id == me_id) & (ChatUserAssociation.client_id == user_id)) | (
+            (ChatUserAssociation.client_id == me_id) & (ChatUserAssociation.executor_id == user_id))).order_by(
+            ChatUserAssociation.deleted_at.desc()))
+
+    chat_association = (await session.execute(query)).scalar_one_or_none()
+    return chat_association
