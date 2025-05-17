@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 from models.general import Order, Bid, Notification, BidStatus
-from sqlalchemy import update
+from sqlalchemy import update, func
 
 
 async def get_order_author_id_by_bid(
@@ -20,16 +20,15 @@ async def notify_author_about_new_bid(
     bid_id: int,
     session: AsyncSession
 ):
-    # Получаем author_id заказа, к которому относится отклик
+
     author_id = await get_order_author_id_by_bid(bid_id, session)
     
     if not author_id:
-        raise ValueError("Order author not found for this bid")
+        raise ValueError("Автор этого отклика не найден")
     
-    # Здесь логика отправки уведомления автору
     notification = Notification(
         user_id=author_id,
-        message=f"New bid received for your order (Bid ID: {bid_id})",
+        message=f"Новый отклик  (Bid ID: {bid_id})",
         is_read=False
     )
     
@@ -45,12 +44,11 @@ async def update_order_status_by_bid_id(
     Обновляет статус заказа по ID отклика
     Возвращает True если обновление прошло успешно, False если отклик или заказ не найдены
     """
-    # 1. Находим отклик и связанный с ним заказ
     result = await session.execute(
         select(Bid, Order)
         .join(Order, Bid.order_id == Order.id)
         .where(Bid.id == bid_id)
-        .with_for_update()  # Блокируем строки для обновления
+        .with_for_update()
     )
         
     bid, order = result.first() or (None, None)
@@ -58,11 +56,9 @@ async def update_order_status_by_bid_id(
     if not order:
         return False
         
-    # 2. Обновляем статус заказа
     order.status_id = new_status_id
         
-    # 3. Если нужно, обновляем статус самого отклика
-    if new_status_id == 2:  # Если заказ принят в работу
+    if new_status_id == 2:
         bid.status = BidStatus.ACCEPTED
     
     if new_status_id == 3:
@@ -77,18 +73,6 @@ async def get_bids_by_user(
     skip: int = 0,
     limit: int = 100
 ) -> list[Bid]:
-    """
-    Получает все отклики (bids) на заказы указанного пользователя (recipient_id)
-    
-    Args:
-        recipient_id: ID пользователя-получателя (author_id в Order)
-        session: Асинхронная сессия БД
-        skip: Пропуск первых N записей
-        limit: Максимальное количество возвращаемых записей
-    
-    Returns:
-        Список откликов (bids) с полной информацией
-    """
     result = await session.execute(
         select(Bid)
         .join(Order, Order.id == Bid.order_id)
@@ -109,12 +93,11 @@ async def update_bid_status_by_bid_id(
     Обновляет статус заказа по ID отклика
     Возвращает True если обновление прошло успешно, False если отклик или заказ не найдены
     """
-    # 1. Находим отклик и связанный с ним заказ
     result = await session.execute(
         select(Bid, Order)
         .join(Order, Bid.order_id == Order.id)
         .where(Bid.id == bid_id)
-        .with_for_update()  # Блокируем строки для обновления
+        .with_for_update() 
     )
         
     bid, order = result.first() or (None, None)
@@ -124,9 +107,8 @@ async def update_bid_status_by_bid_id(
     
     if not bid:
         return False
-        
-    # 3. Если нужно, обновляем статус самого отклика
-    if new_status_id == 2:  # Если заказ принят в работу
+
+    if new_status_id == 2:
         bid.status = BidStatus.ACCEPTED
         order.status_id = 2
     
@@ -141,32 +123,27 @@ async def reject_other_bids_and_notify(
     accepted_bid_id: int,
     session: AsyncSession
 ):
-    # 1. Находим все отклоняемые отклики
-    rejected_bids_result = await session.execute(
-        select(Bid)
-        .where(Bid.order_id == order_id)
-        .where(Bid.id != accepted_bid_id)
-        .where(Bid.status == BidStatus.PENDING)  # Только отклики в статусе PENDING
-    )
-    rejected_bids = rejected_bids_result.scalars().all()
-
-    # 2. Обновляем статус всех отклоняемых откликов
-    await session.execute(
-        update(Bid)
-        .where(Bid.order_id == order_id)
-        .where(Bid.id != accepted_bid_id)
-        .where(Bid.status == BidStatus.PENDING)
-        .values(status=BidStatus.REJECTED)
-    )
-
-    # 3. Создаем уведомления для каждого отклоненного отклика
+    rejected_bids = (await session.execute(
+            select(Bid)
+            .where(Bid.order_id == order_id)
+            .where(Bid.status == BidStatus.PENDING)
+            )
+        ).scalars().all()
+    
+    if not rejected_bids:
+        return
+    
+    # Обновляем статус и создаем уведомления
+    notifications = []
     for bid in rejected_bids:
-        notification = Notification(
-            user_id=bid.user_id,  # ID пользователя, чей отклик отклонен
-            message=f"Your bid #{bid.id} for order {bid.order_id} was rejected",
-            is_read=False
+        bid.status = BidStatus.REJECTED
+        notifications.append(
+            Notification(
+                user_id=bid.user_id,
+                message=f"Ваш отклик #{bid.id} был отклонен",
+                is_read=False
+            )
         )
-        session.add(notification)
-
-    # 4. Фиксируем изменения
+    
+    session.add_all(notifications)
     await session.commit()

@@ -7,7 +7,6 @@ class ReviewBase(Model):
     rating: int
 
 class ReviewModel(ReviewBase):
-    # id: int
     comment: str
     rating: int
     reviewer_id: int

@@ -4,11 +4,10 @@ import imghdr
 
 from sqlalchemy import (
     Column, DateTime, Integer, String, Boolean, Text, ForeignKey,
-    Index, CheckConstraint, Numeric, Enum
+    Index, CheckConstraint, Numeric, Enum, Table
 )
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
-from pydantic import EmailStr
 from enum import IntEnum
 
 from models.core import Base, TimestampMixin, fresh_timestamp
@@ -22,11 +21,12 @@ def is_image(path: os.PathLike) -> bool:
     return imghdr.what(path) is not None
 
 
-# user_skill_association = Table(
-#     'user_skills', Base.metadata,
-#     Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
-#     Column('skill_id', Integer, ForeignKey('skills.id'), primary_key=True)
-# )
+user_role_association = Table(
+    'user_roles',
+    Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
+    Column('role_id', Integer, ForeignKey('roles.id'), primary_key=True)
+)
 
 
 class OrderStatus(Base):
@@ -78,9 +78,7 @@ class User(TimestampMixin, Base):
     messages = relationship("Message", back_populates="author")
     reviews_as_reviewer = relationship("Review", back_populates="reviewer", foreign_keys="Review.reviewer_id")
     reviews_as_reviewed = relationship("Review", back_populates="reviewed", foreign_keys="Review.reviewed_id")
-    # messages = relationship("Message", back_populates="author")
-    # skills = relationship("Skill", secondary=user_skill_association, back_populates="users")
-    # executor_chats = relationship("Chat", foreign_keys="Chat.executor_id", back_populates="executor")
+    roles = relationship("Role", secondary=user_role_association, back_populates="users")
     notifications = relationship("Notification", back_populates="user",)
 
 
@@ -93,8 +91,6 @@ class Role(TimestampMixin, Base):
     is_core = Column(Boolean, server_default="false")
 
     users = relationship("User", back_populates="role")
-
-    # permissions = relationship("RolePermission", back_populates="role")
 
 
 class Chat(TimestampMixin, Base):
@@ -179,18 +175,6 @@ class File(TimestampMixin, Base):
     reviews = relationship("Review", back_populates="file")
 
 
-
-# class RolePermission(TimestampMixin, Base):
-#     __tablename__ = "role_permissions"
-#
-#     role_id = Column(Integer, ForeignKey("roles.id"), primary_key=True)
-#     permission = Column(Text, primary_key=True)
-#     created_at = Column(DateTime, default=fresh_timestamp())
-#     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-#
-#     role = relationship("Role", back_populates="permissions")
-
-
 class Category(TimestampMixin, Base):
     __tablename__ = "categories"
 
@@ -251,21 +235,7 @@ class Notification(Base):
     created_at = Column(DateTime, default=fresh_timestamp())
 
     user = relationship("User", back_populates="notifications")
-#
-#
-# class Skill(Base):
-#     __tablename__ = "skills"
-#     __table_args__ = (
-#         Index("idx_skill_name", "name"),
-#     )
-#
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String(50), unique=True, nullable=False)
-#     description = Column(Text)
-#
-#     users = relationship("User", secondary=user_skill_association, back_populates="skills")
-#
-#
+
 class BidStatus(IntEnum):
     PENDING = 1
     ACCEPTED = 2

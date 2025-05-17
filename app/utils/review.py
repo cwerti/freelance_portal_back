@@ -63,7 +63,7 @@ async def create_review(session: AsyncSession, review: Review):
     if not all([client_exists, executor_exists]):
         raise HTTPException(
             status_code=401,
-            detail="Client or executor not found"
+            detail="Один из пользователей не найден"
         )
     existing_review = await session.execute(
         select(Review).where(
@@ -100,7 +100,7 @@ async def update_review(session: AsyncSession, review_id: int, review: ReviewBas
         if not db_review:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Review with id {review_id} not found"
+                detail=f"Отзыв с номером {review_id} не найден"
             )
 
         if review.comment is not None:

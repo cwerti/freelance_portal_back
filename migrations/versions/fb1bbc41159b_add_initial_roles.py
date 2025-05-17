@@ -32,19 +32,19 @@ def upgrade():
         [
             {
                 'name': 'admin',
-                'description': 'Администратор системы с полными правами'
+                'description': 'Роль'
             },
             {
                 'name': 'manager',
-                'description': 'Менеджер с ограниченными правами администрирования'
+                'description': 'Роль'
             },
             {
                 'name': 'user',
-                'description': 'Обычный пользователь с базовыми правами'
+                'description': 'Роль'
             },
             {
                 'name': 'guest',
-                'description': 'Гостевой аккаунт с минимальными правами'
+                'description': 'Роль'
             }
         ]
     )
